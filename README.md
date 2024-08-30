@@ -1,5 +1,6 @@
 # PATHWAY GC
 ## Step 0: 设置路径 
+```R
 setwd("/Users/moonly/Desktop/Pan-cancer/pan3")
 
 rm(list = ls())
@@ -7,11 +8,13 @@ rm(list = ls())
 gc()
 
 options(repos = c(CRAN = "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"))
+```
 
 ## Step1:取泛癌TOP5000的基因表达数据
 
 #输入pancan表达数据
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/a9f7c55e-ecab-452c-ae50-8ea8859b89b8">
+
 ```R
 expr <- read.csv("/Users/moonly/Desktop/Pan-cancer/pan_tumor_exp.csv",header = T, stringsAsFactors = F)
 
@@ -77,10 +80,12 @@ exp_5000_matrix = exp_ratio[(rownames(exp_ratio) %in% exp_5000[,2]),]
 
 write.csv(exp_5000_matrix,"exp_5000_matrix.csv")
 ```
+
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/6c1d64cb-055d-40c0-91e7-6dab8d6272d7">
 
 
 ## Step2:spearman
+
 ```R
 result1 <- cor(t(exp_5000_matrix), method = "pearson", use = "complete.obs")
 
@@ -88,6 +93,7 @@ result1[1:3,1:3]
 
 write.csv(result1,"spearman results1.csv")
 ```
+
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/5d6fba48-af6b-4bbd-b2d5-2615b94f1442">
 
 
@@ -102,6 +108,7 @@ class(d)
 
 result2 <- ConsensusClusterPlus(d,maxK=20,reps=1000,pItem=0.8,pFeature=1,title="pan3(5000)",clusterAlg="km",distance="euclidean",seed=1262118388.71279,plot="pdf",writeTable=TRUE)
 ```
+
 #Consensus 聚类结果会储存在一个文件夹中
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/dba3ba45-75c2-4efe-b1af-20ffd711fa85">
 
@@ -120,6 +127,7 @@ result2 <- ConsensusClusterPlus(d,maxK=20,reps=1000,pItem=0.8,pFeature=1,title="
 
 ## Step4:根据聚类结果构建基因集
 #ID 转换
+
 ```R
 library(org.Hs.eg.db)
 
@@ -143,6 +151,7 @@ ID_list
 
 write.csv(ID_list,"ID_trans.csv")
 ```
+
 #将以上8类基因集中的每一类基因集进行基因集富集分析（GSEA），同类合并，整理结果如下，显示为6类（基质、发育、免疫、细胞循环、神经、代谢）通路基因集：
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/0ea977c7-ed16-4b6f-92ac-ba174887cd7d">
 
@@ -153,6 +162,7 @@ write.csv(ID_list,"ID_trans.csv")
 
 ## Step5:ssgsea打分 
 #接下来，我们对通路富集矩阵与exp表达数据进行ssgsea打分
+
 ```R
 rm(list = ls())
 
@@ -212,9 +222,11 @@ res[1:3,1:3]
 
 write.csv(res, "ssgsea_pathway.csv")
 ```
+
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/a5020245-cb2b-4ecf-ac32-602ae8629d5c">
 
 ## Step6:层次聚类
+
 ```R
 rm(list = ls())
 
@@ -274,5 +286,6 @@ heatmap = pheatmap(ssgsea,scale = 'row',cellheight = 12,show_colnames = FALSE,co
 dev.off()
 
 ```
+
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/8f6d15fd-c8a3-4c24-82a5-a2ca835b3b48">
 
