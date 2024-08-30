@@ -16,6 +16,7 @@ options(repos = c(CRAN = "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"))
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/a9f7c55e-ecab-452c-ae50-8ea8859b89b8">
 
 ```R
+
 expr <- read.csv("/Users/moonly/Desktop/Pan-cancer/pan_tumor_exp.csv",header = T, stringsAsFactors = F)
 
 expr[1:3,1:3]
@@ -43,6 +44,7 @@ table(is.na(exp8))
 exp7 <- na.omit(exp7)
 
 write.csv(exp8,"exp(rowSums(is.na)>0).csv")
+
 ```
 
 <img width="1069" alt="image" src="https://github.com/user-attachments/assets/7147a0cf-8e5c-4b64-9820-c7665aa4a936">
