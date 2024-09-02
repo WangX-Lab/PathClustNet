@@ -1,20 +1,21 @@
 # PathClustNet
-## Step 0: 设置路径 
+
+PathClustNet identifies cancer subtypes by analyzing gene expression data. It selects variable genes, computes Pearson correlations to form gene clusters, and performs pathway enrichment analysis. A pathway enrichment matrix is then used for hierarchical clustering to determine subtypes. Code and documentation are provided.
+## Step0: Set the Working Directory
+
 ```R
 setwd("/Users/moonly/Desktop/Pan-cancer/pan3")
-
 rm(list = ls())
-
 gc()
-
 options(repos = c(CRAN = "https://mirrors.tuna.tsinghua.edu.cn/CRAN/"))
 ```
 
-## Step1:取泛癌TOP5000的基因表达数据
+## Step1: Retrieve Pan-Cancer Top 5000 Gene Expression Data
 
-输入pancan表达数据
+Import Pan-Cancer gene expression data across 33 cancer types
 ![image](https://github.com/user-attachments/assets/9ab10089-50cd-4635-bd8b-cabecf3b62aa)
 
+Filters out rows from a dataset of too much missing values to prepare data
 ```R
 
 expr <- read.csv("/Users/moonly/Desktop/Pan-cancer/pan_tumor_exp.csv",header = T, stringsAsFactors = F)
@@ -22,31 +23,22 @@ expr[1:3,1:3]
 rownames(expr) <- expr[,1]
 expr <- expr[,-1]
 na_counts <- rowSums(is.na(expr))
-exp6 <- expr[na_counts <= 100, ]
-dim(exp6)
-exp7 <- expr[na_counts <= 10, ]
-dim(exp7)
-exp8 <- expr[na_counts == 0, ]
-dim(exp8)
-table(is.na(exp8))
-exp7 <- na.omit(exp7)
-write.csv(exp8,"exp(rowSums(is.na)>0).csv")
+exp <- expr[na_counts == 0, ]
+dim(exp)
+table(is.na(exp))
+write.csv(exp,"exp(rowSums(is.na)<0).csv")
 
 ```
 
 ![image](https://github.com/user-attachments/assets/e4d3fb26-a4ad-4c66-85c9-487a35c420b1)
 
-筛选top5000
+Filter to select the top 5000 genes based on expression levels.
 
 ```R
-rm(exp7)
-exp_ratio = exp8
+exp_ratio = exp
 SD = apply(exp_ratio,1 ,function(x) sd(x,na.rm=TRUE))
 write.csv(SD ,"TCGA_ratio_SD_exp.csv")
 exp_SD = SD
-class(exp_SD)
-class(SD)
-head(SD)
 exp_SD <- as.data.frame(exp_SD)
 exp_SD[,2] <- rownames(exp_SD)
 names(exp_SD) = c("samp_SD","exp")
@@ -69,63 +61,57 @@ write.csv(result1,"spearman results1.csv")
 ```
 ![image](https://github.com/user-attachments/assets/7b0bccfb-2b4b-4e4e-9df7-9733eef0e1e0)
 
-## Step3:Consensus聚类
+## Step3:Consensus Clustering Analysis
 
 ```R
 
 library(ConsensusClusterPlus)
 d = as.matrix(result1)
-class(d)
 result2 <- ConsensusClusterPlus(d,maxK=20,reps=1000,pItem=0.8,pFeature=1,title="pan3(5000)",clusterAlg="km",distance="euclidean",seed=1262118388.71279,plot="pdf",writeTable=TRUE)
 
 ```
 
-Consensus 聚类结果会储存在一个文件夹中
+Save the results of the Consensus clustering in a dedicated folder
 ![image](https://github.com/user-attachments/assets/f246417f-b378-4fd5-a4c1-dfe003c41ce3)
 
 
 
-根据聚类结果确认最优类为8类
+Analyze the clustering results to determine the optimal number of clusters, identified as 8
 ![image](https://github.com/user-attachments/assets/6e7e91fc-6c69-417b-a7a8-37505bd998e4)
 
 
-在Consensus聚类结果文件夹中找到k=8的基因聚类结果
+Locate the gene clustering results for k=8 within the Consensus clustering results folder
 ![image](https://github.com/user-attachments/assets/3c10fc6d-6c30-47ad-a03a-0aec9aef4319)
 
 
-将上述聚类结果整理成genesets表格，格式如下：
+Organize these clustering results into gene sets (genesets) tables for subsequent analysis：
 ![image](https://github.com/user-attachments/assets/3bba83b1-fc29-4d46-9945-613d3652712b)
 
 
-## Step4:根据聚类结果构建基因集
-ID 转换
+## Step4:Construct Gene Sets Based on Clustering Results
+Perform gene ID conversion
 
 ```R
 
 library(org.Hs.eg.db)
 k=keys(org.Hs.eg.db,keytype = "ENSEMBL")
-head(k,5)
 list=select(org.Hs.eg.db,keys=k,columns = c("ENTREZID","SYMBOL"), keytype="ENSEMBL")
-dim(list)
-head(list,5)
 ID <- read.csv("ID .csv",header = T, stringsAsFactors = F)
-ID
 ID_list=list[match(ID$ENSEMBL,list$ENSEMBL), ]
-ID_list
 write.csv(ID_list,"ID_trans.csv")
 
 ```
 
-将以上8类基因集中的每一类基因集进行基因集富集分析（GSEA），同类合并，整理结果如下，显示为6类（基质、发育、免疫、细胞循环、神经、代谢）通路基因集：
+Conduct Gene Set Enrichment Analysis (GSEA) for each category of gene sets, consolidating the results into six major categories (Stromal, Developmental, Immune, Cell Cycle, Neural, Metabolic) of pathway gene sets
 ![image](https://github.com/user-attachments/assets/90a74147-e49b-4467-9d9f-2f9b0ce00b8a)
 
-随机挑选每类基因集里面的5类通路，从GOBP中找到每类通路所对应的基因，构建基因集，得到30个通路的基因集矩阵，示例如下：
+Randomly select five pathways from each gene set category, locate the corresponding genes in the GOBP database, and construct a matrix of 30 pathway gene sets. Example shown below:
 ![image](https://github.com/user-attachments/assets/b36da6cc-7845-4ef0-930a-3fe81bad4b17)
 
 
 
-## Step5:ssgsea打分 
-接下来，我们对通路富集矩阵与exp表达数据进行ssgsea打分
+## Step5:Scoring with ssGSEA 
+Use the ssGSEA method to score the gene expression data and pathway enrichment matrix.
 
 ```R
 
@@ -167,13 +153,12 @@ write.csv(res, "ssgsea_pathway.csv")
 
 
 
-## Step6:层次聚类
+## Step6:Perform Hierarchical Clustering Analysis
 
 ```R
 
 rm(list = ls())
 ssgsea = read.csv("ssgsea_pathway.csv",header=F,encoding="UTF-8")
-ssgsea[1:3,1:2]
 rownames(ssgsea) = as.character(ssgsea[,1])
 ssgsea = ssgsea[,-1]
 colnames(ssgsea) = t(ssgsea[1,])
@@ -190,7 +175,6 @@ library(pheatmap)
 b[,2] = paste("cluster",b[,2],sep = "")
 anno_col = data.frame(cluster=factor(b[,2]))
 rownames(anno_col)=as.character(b[,1])
-table(anno_col)
 ann_colors = list(cluster = c(cluster1="#d9a62e", cluster2="#824880", cluster3="#cd6234", cluster4="#F8C9C1"))
 pdf("heatmap.pdf",width=15,height=10)
 heatmap = pheatmap(ssgsea,scale = 'row',cellheight = 12,show_colnames = FALSE,color=colorRampPalette(c("blue2", "white", "red"))(20),legend=F,
