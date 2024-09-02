@@ -52,13 +52,13 @@ write.csv(exp_5000_matrix,"exp_5000_matrix.csv")
 
 ![image](https://github.com/user-attachments/assets/37b37193-68ad-4f93-856f-88792d845897)
 
-## Step2:spearman
+## Step2:Pearson correlation
 
 ```R
 
 result1 <- cor(t(exp_5000_matrix), method = "pearson", use = "complete.obs")
 result1[1:3,1:3]
-write.csv(result1,"spearman results1.csv")
+write.csv(result1,"pearson results1.csv")
 
 ```
 ![image](https://github.com/user-attachments/assets/7b0bccfb-2b4b-4e4e-9df7-9733eef0e1e0)
